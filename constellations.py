@@ -1,5 +1,6 @@
-import pygame, sys
+import pygame, sys, time, math
 
+# Setup
 clock = pygame.time.Clock()
 pygame.init()
 pygame.display.set_caption("Constellations")
@@ -7,10 +8,10 @@ WINDOW_SIZE = (1000, 600)
 screen = pygame.display.set_mode(WINDOW_SIZE)
 CANVAS_SIZE = (500, 300)
 display = pygame.Surface((CANVAS_SIZE))
-print(CANVAS_SIZE[0])
 
 gameRunning = True
 
+# Images / Sprites
 tile1 = pygame.image.load("tile1.png")
 tile2 = pygame.image.load("tile2.png")
 tile5 = pygame.image.load("tile5.png")
@@ -20,6 +21,12 @@ sprite2 = pygame.image.load("sprite2.png")
 spritebox = pygame.Rect(300,175, 12,16)
 mainframe = sprite1
 
+# Delta Time
+prev_time = time.time()
+dt = 0
+TARGET_FPS = 80
+
+# Create Map from map.txt
 def load_map():
     f = open("map.txt","r")
     data = f.read()
@@ -77,12 +84,19 @@ while gameRunning:
 # Reset display surface to gray
     display.fill((160,150,255))
 
+# Delta Time
+    now = time.time()
+    dt = now - prev_time
+    prev_time = now
+
+
+
 # Change Scroll
-    scrollchangex = int((spritebox.x-scroll[0])-(CANVAS_SIZE[0]/2))/20
-    scrollchangey = int((spritebox.y-scroll[1])-(CANVAS_SIZE[1]/2))/20
+    scrollchangex = int((spritebox.x-scroll[0])-(CANVAS_SIZE[0]/2))/20*(math.ceil(dt*TARGET_FPS))
+    scrollchangey = int((spritebox.y-scroll[1])-(CANVAS_SIZE[1]/2))/20*(math.ceil(dt*TARGET_FPS))
     scroll[0] += scrollchangex
     scroll[1] += scrollchangey
-    print(scrollchangex)
+
 
 # Pygame Events
     for event in pygame.event.get():
@@ -98,14 +112,13 @@ while gameRunning:
                 moving_right = True
                 mainframe = sprite2
             if event.key == pygame.K_UP:
-                if airtimer < 10:
+                if airtimer < 10*(1/dt)/TARGET_FPS:
                     vertical_momentum = -3.125
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 moving_left = False
             if event.key == pygame.K_RIGHT:
                 moving_right = False
-    
 
 # Draw Background Objects
     pygame.draw.circle(display, (200,179,2), (190-scroll[0]/25,125+scroll[1]/20), 50) #(The Sun)
@@ -118,36 +131,38 @@ while gameRunning:
     tile_rects = []
     y = 0
     for row in game_map:
-        x = 0
-        for tile in row:
-            if ((x*16-scroll[0] > -16) and (x*16-scroll[0] < CANVAS_SIZE[0])) and ((y*16-scroll[1] > -16) and (y*16-scroll[1] < CANVAS_SIZE[1])):
-                if tile == "1":
-                    display.blit(tile1, (x*16-scroll[0],y*16-scroll[1]))
-                    tile_rects.append(pygame.Rect(x*16,y*16, 16,16))
-                if tile == "2":
-                    display.blit(tile2, (x*16-scroll[0],y*16-scroll[1]))
-                    tile_rects.append(pygame.Rect(x*16,y*16, 16,16))
-                if tile == "5":
-                    display.blit(tile5, (x*16-scroll[0],y*16-scroll[1]))
-                    tile_rects.append(pygame.Rect(x*16,y*16+1, 16,15))
-                if tile == "6":
-                    display.blit(tile6, (x*16-scroll[0],y*16-scroll[1]))
-                    tile_rects.append(pygame.Rect(x*16,y*16+1, 16,15))
-            x += 1
+        if (y*16-scroll[1] > -16) and (y*16-scroll[1] < CANVAS_SIZE[1]):
+            x = 0
+            for tile in row:
+                if ((x*16-scroll[0] > -16) and (x*16-scroll[0] < CANVAS_SIZE[0])) and ((y*16-scroll[1] > -16) and (y*16-scroll[1] < CANVAS_SIZE[1])):
+                    if tile == "1":
+                        display.blit(tile1, (x*16-scroll[0],y*16-scroll[1]))
+                        tile_rects.append(pygame.Rect(x*16,y*16, 16,16))
+                    if tile == "2":
+                        display.blit(tile2, (x*16-scroll[0],y*16-scroll[1]))
+                        tile_rects.append(pygame.Rect(x*16,y*16, 16,16))
+                    if tile == "5":
+                        display.blit(tile5, (x*16-scroll[0],y*16-scroll[1]))
+                        tile_rects.append(pygame.Rect(x*16,y*16+1, 16,15))
+                    if tile == "6":
+                        display.blit(tile6, (x*16-scroll[0],y*16-scroll[1]))
+                        tile_rects.append(pygame.Rect(x*16,y*16+1, 16,15))
+                x += 1
         y += 1
     
 # Player Movement
     player_movement = [0,0]
     if moving_left == True:
-        player_movement[0] -= 1
+        player_movement[0] -= math.ceil(dt*TARGET_FPS)
     if moving_right == True:
-        player_movement[0] += 1
+        player_movement[0] += math.ceil(dt*TARGET_FPS)
+    print(player_movement)
+    
     # gravity
-    player_movement[1] += vertical_momentum
-    vertical_momentum += 0.125
+    player_movement[1] += (vertical_momentum*dt*TARGET_FPS)
+    vertical_momentum += 0.125*(dt*TARGET_FPS)
     if vertical_momentum > 3:
         vertical_momentum = 3
-
 
     spritebox, collision_types, vertical_momentum = move(spritebox, player_movement, tile_rects, vertical_momentum)
     
@@ -163,5 +178,5 @@ while gameRunning:
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
     pygame.display.update()
 # Time Delay
-    clock.tick(105)
-    print(int(clock.get_fps()))
+    clock.tick(110)
+    #print(int(clock.get_fps()))
