@@ -112,7 +112,7 @@ while gameRunning:
                 moving_right = True
                 mainframe = sprite2
             if event.key == pygame.K_UP:
-                if airtimer < 10*(1/dt)/TARGET_FPS:
+                if airtimer < 10:
                     vertical_momentum = -3.125
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
@@ -156,21 +156,21 @@ while gameRunning:
         player_movement[0] -= math.ceil(dt*TARGET_FPS)
     if moving_right == True:
         player_movement[0] += math.ceil(dt*TARGET_FPS)
-    print(player_movement)
+    
     
     # gravity
     player_movement[1] += (vertical_momentum*dt*TARGET_FPS)
     vertical_momentum += 0.125*(dt*TARGET_FPS)
     if vertical_momentum > 3:
         vertical_momentum = 3
-
+    #print(player_movement)
     spritebox, collision_types, vertical_momentum = move(spritebox, player_movement, tile_rects, vertical_momentum)
     
     if collision_types["bottom"] == True:
         vertical_momentum = 0
         airtimer = 0
     else:
-        airtimer += 1
+        airtimer += (1*dt)*TARGET_FPS
 
     display.blit(mainframe, (spritebox.x-scroll[0], spritebox.y-scroll[1]))
 
@@ -179,4 +179,6 @@ while gameRunning:
     pygame.display.update()
 # Time Delay
     clock.tick(110)
+    print((1*dt)*TARGET_FPS)
     #print(int(clock.get_fps()))
+    
