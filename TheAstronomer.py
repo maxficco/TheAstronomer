@@ -162,7 +162,7 @@ while gameRunning: ############################### GAME LOOP ###################
             pygame.draw.rect(display, (255,255,255), (s[0]-scroll[0]/100, s[1]-scroll[1]/4, 1, 1))
 
 # Draw Background Objects
-    pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/25,125+scroll[1]/40), 50)
+    pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/50,125+scroll[1]/40), 50)
     pygame.draw.rect(display, (110, 115, 125), (0,150-scroll[1]/40,500,300))
     pygame.draw.rect(display, (43, 49, 61), (0,220-scroll[1]/17.5,500,500))
 
