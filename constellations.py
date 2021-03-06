@@ -1,4 +1,4 @@
-import pygame, sys, time, math
+import pygame, sys, time, math, random
 
 # Setup
 clock = pygame.time.Clock()
@@ -38,10 +38,21 @@ def load_map():
     return game_map
 game_map = load_map()
 
+def make_stars():
+    stars = []
+    for star in range(100):
+        x = random.randint(0,500)
+        y = random.randint(0, 300)
+        stars.append((x,y))
+    print(stars)
+    return stars
+stars = make_stars()
+
 moving_left = False
 moving_right = False
 vertical_momentum = 0
 airtimer = 0
+jumpcounter = 0
 
 scroll = [0,0]
 
@@ -80,23 +91,37 @@ def move(rect, movement, tiles, vertical_momentum):
             break
     return rect, collision_types, vertical_momentum
 
-while gameRunning:
-# Reset display surface to gray
-    display.fill((160,150,255))
+titlescreen = True
+
+
+while gameRunning: ############################### GAME LOOP ###############################
+    while titlescreen:
+        display.fill((100,100,100))
+        for title_event in pygame.event.get():
+            if title_event.type == pygame.QUIT:
+                gameRunning = False
+                pygame.quit()
+                sys.exit()
+                break
+            if title_event.type == pygame.KEYDOWN:
+                titlescreen = False
+
+        screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
+        pygame.display.update()
+        clock.tick(110)
+            
+
+# Reset display surface to sky color
+    display.fill((78,122,200))
 
 # Delta Time
     now = time.time()
     dt = now - prev_time
     prev_time = now
 
-
-
 # Change Scroll
-    scrollchangex = int((spritebox.x-scroll[0])-(CANVAS_SIZE[0]/2))/20*(math.ceil(dt*TARGET_FPS))
-    scrollchangey = int((spritebox.y-scroll[1])-(CANVAS_SIZE[1]/2))/20*(math.ceil(dt*TARGET_FPS))
-    scroll[0] += scrollchangex
-    scroll[1] += scrollchangey
-
+    scroll[0] += int((spritebox.x-scroll[0])-(CANVAS_SIZE[0]/2))/20*(math.ceil(dt*TARGET_FPS))
+    scroll[1] += int((spritebox.y-scroll[1])-(CANVAS_SIZE[1]/2))/20*(math.ceil(dt*TARGET_FPS))
 
 # Pygame Events
     for event in pygame.event.get():
@@ -112,8 +137,9 @@ while gameRunning:
                 moving_right = True
                 mainframe = sprite2
             if event.key == pygame.K_UP:
-                if airtimer < 10:
-                    vertical_momentum = -3.125
+                if airtimer < 25 and jumpcounter < 1:
+                    jumpcounter += 1
+                    vertical_momentum = -3
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 moving_left = False
@@ -121,11 +147,9 @@ while gameRunning:
                 moving_right = False
 
 # Draw Background Objects
-    pygame.draw.circle(display, (200,179,2), (190-scroll[0]/25,125+scroll[1]/20), 50) #(The Sun)
-    pygame.draw.rect(display, (52,45,145), (0,150,500,150))
-    pygame.draw.rect(display, (100,100,100), (0,220,500,150))
-
-
+    pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/25,125+scroll[1]/40), 50)
+    pygame.draw.rect(display, (110, 115, 125), (0,150-scroll[1]/40,500,300))
+    pygame.draw.rect(display, (43, 49, 61), (0,220-scroll[1]/17.5,500,300))
 
 # Draw Tiles and Map Rects
     tile_rects = []
@@ -157,7 +181,6 @@ while gameRunning:
     if moving_right == True:
         player_movement[0] += math.ceil(dt*TARGET_FPS)
     
-    
     # gravity
     player_movement[1] += (vertical_momentum*dt*TARGET_FPS)
     vertical_momentum += 0.125*(dt*TARGET_FPS)
@@ -169,16 +192,17 @@ while gameRunning:
     if collision_types["bottom"] == True:
         vertical_momentum = 0
         airtimer = 0
+        jumpcounter = 0
     else:
-        airtimer += (1*dt)*TARGET_FPS
+        airtimer += math.ceil(dt*TARGET_FPS)
 
     display.blit(mainframe, (spritebox.x-scroll[0], spritebox.y-scroll[1]))
 
-# Draw and update display
+# Draw display (scaled) and update screen
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
     pygame.display.update()
+
 # Time Delay
     clock.tick(110)
-    print((1*dt)*TARGET_FPS)
     #print(int(clock.get_fps()))
     
