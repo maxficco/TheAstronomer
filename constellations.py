@@ -9,7 +9,11 @@ screen = pygame.display.set_mode(WINDOW_SIZE)
 CANVAS_SIZE = (500, 300)
 display = pygame.Surface((CANVAS_SIZE))
 
-gameRunning = True
+
+titlescreen = True
+gameRunning = False
+endgame = False
+
 
 # Images / Sprites
 tile1 = pygame.image.load("tile1.png")
@@ -20,6 +24,7 @@ sprite1 = pygame.image.load("sprite1.png")
 sprite2 = pygame.image.load("sprite2.png")
 spritebox = pygame.Rect(300,175, 12,16)
 mainframe = sprite1
+checkpoint = [300, 175]
 
 # Delta Time
 prev_time = time.time()
@@ -38,15 +43,14 @@ def load_map():
     return game_map
 game_map = load_map()
 
-def make_stars():
+def make_stars(howmany,x1,x2,y1,y2):
     stars = []
-    for star in range(100):
-        x = random.randint(0,500)
-        y = random.randint(0, 300)
+    for star in range(howmany):
+        x = random.randint(x1, x2)
+        y = random.randint(y1, y2)
         stars.append((x,y))
-    print(stars)
     return stars
-stars = make_stars()
+stars = make_stars(500, 0, 500, 400, 1500)
 
 moving_left = False
 moving_right = False
@@ -86,33 +90,36 @@ def move(rect, movement, tiles, vertical_momentum):
             collision_types["top"] = True
             vertical_momentum = 0
         if tile.height == 15:
-            rect.x = 300
-            rect.y = 175
+            rect.x = checkpoint[0]
+            rect.y = checkpoint[1]
             break
     return rect, collision_types, vertical_momentum
 
-titlescreen = True
 
-
-while gameRunning: ############################### GAME LOOP ###############################
-    while titlescreen:
+while titlescreen:
         display.fill((100,100,100))
         for title_event in pygame.event.get():
             if title_event.type == pygame.QUIT:
-                gameRunning = False
                 pygame.quit()
                 sys.exit()
-                break
             if title_event.type == pygame.KEYDOWN:
                 titlescreen = False
+                gameRunning = True
 
         screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
         pygame.display.update()
         clock.tick(110)
-            
+
+while gameRunning: ############################### GAME LOOP ###############################
 
 # Reset display surface to sky color
-    display.fill((78,122,200))
+    multiplier = spritebox.y/3000
+    if multiplier <= 0:
+        multiplier = 0
+    if multiplier >= 1:
+        multiplier = 1
+    multiplier = 1 - multiplier
+    display.fill((78*multiplier,122*multiplier,200*multiplier))
 
 # Delta Time
     now = time.time()
@@ -126,7 +133,7 @@ while gameRunning: ############################### GAME LOOP ###################
 # Pygame Events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            gameRunning = False
+            print(checkpoint) #()()()()()()
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
@@ -140,16 +147,24 @@ while gameRunning: ############################### GAME LOOP ###################
                 if airtimer < 25 and jumpcounter < 1:
                     jumpcounter += 1
                     vertical_momentum = -3
+            if event.key == pygame.K_m:
+                checkpoint[0] = spritebox.x
+                checkpoint[1] = spritebox.y
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 moving_left = False
             if event.key == pygame.K_RIGHT:
                 moving_right = False
+# Draw Stars:
+    for s in stars:
+        blink = random.randint(0, 100)
+        if blink != 26:
+            pygame.draw.rect(display, (255,255,255), (s[0]-scroll[0]/100, s[1]-scroll[1]/4, 1, 1))
 
 # Draw Background Objects
     pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/25,125+scroll[1]/40), 50)
     pygame.draw.rect(display, (110, 115, 125), (0,150-scroll[1]/40,500,300))
-    pygame.draw.rect(display, (43, 49, 61), (0,220-scroll[1]/17.5,500,300))
+    pygame.draw.rect(display, (43, 49, 61), (0,220-scroll[1]/17.5,500,500))
 
 # Draw Tiles and Map Rects
     tile_rects = []
@@ -204,5 +219,24 @@ while gameRunning: ############################### GAME LOOP ###################
 
 # Time Delay
     clock.tick(110)
-    #print(int(clock.get_fps()))
+    print(int(clock.get_fps()))
+
+# Check for endgame
+    if spritebox.y > 4777:
+        gameRunning = False
+        endgame = True
+
+while endgame:
+    display.fill((43, 49, 61))
+    for title_event in pygame.event.get():
+        if title_event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if title_event.type == pygame.KEYDOWN:
+            endgame = False
+
+    screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
+    pygame.display.update()
+    clock.tick(110)
+
     
