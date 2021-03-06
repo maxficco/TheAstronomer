@@ -16,12 +16,12 @@ endgame = False
 
 
 # Images / Sprites
-tile1 = pygame.image.load("tile1.png")
-tile2 = pygame.image.load("tile2.png")
-tile5 = pygame.image.load("tile5.png")
-tile6 = pygame.image.load("tile6.png")
-sprite1 = pygame.image.load("sprite1.png")
-sprite2 = pygame.image.load("sprite2.png")
+tile1 = pygame.image.load("tiles/tile1.png")
+tile2 = pygame.image.load("tiles/tile2.png")
+tile5 = pygame.image.load("tiles/tile5.png")
+tile6 = pygame.image.load("tiles/tile6.png")
+sprite1 = pygame.image.load("sprites/sprite1.png")
+sprite2 = pygame.image.load("sprites/sprite2.png")
 spritebox = pygame.Rect(300,175, 12,16)
 mainframe = sprite1
 checkpoint = [300, 175]
