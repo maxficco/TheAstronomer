@@ -1,4 +1,6 @@
 import pygame, sys, time, math, random
+from impact_animations import Explosion, ParticleEffect
+
 
 # Setup
 clock = pygame.time.Clock()
@@ -50,13 +52,15 @@ def make_stars(howmany,x1,x2,y1,y2):
         y = random.randint(y1, y2)
         stars.append((x,y))
     return stars
-stars = make_stars(500, 0, 500, 400, 1500)
+stars = make_stars(500, 0, 500, 300, 1200)
 
 moving_left = False
 moving_right = False
 vertical_momentum = 0
 airtimer = 0
 jumpcounter = 0
+explosion_tests = []
+particle_tests = []
 
 scroll = [0,0]
 
@@ -212,6 +216,30 @@ while gameRunning: ############################### GAME LOOP ###################
         airtimer += math.ceil(dt*TARGET_FPS)
 
     display.blit(mainframe, (spritebox.x-scroll[0], spritebox.y-scroll[1]))
+
+    if collision_types["left"] == True:
+        if len(explosion_tests) < 1:
+            explosion_tests.append(Explosion(spritebox.x, spritebox.y+8))
+    if collision_types["right"] == True:
+        if len(explosion_tests) < 1:
+            explosion_tests.append(Explosion(spritebox.x+12, spritebox.y+8))
+
+    if collision_types["bottom"] == True:
+        if len(particle_tests) < 1:
+            particle_tests.append(ParticleEffect(spritebox.x+6, spritebox.y+8))
+
+    for pars in particle_tests:
+        pars.draw(display, scroll)
+        if len(pars.particles) < 1:
+            particle_tests.remove(pars)
+
+    for exp in explosion_tests:
+        exp.grow()
+        if exp.radius > 20:
+            explosion_tests.remove(exp)
+        else:
+            exp.draw(display, scroll)
+
 
 # Draw display (scaled) and update screen
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
