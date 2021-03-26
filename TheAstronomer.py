@@ -1,11 +1,10 @@
 import pygame, sys, time, math, random
-from impact_animations import Explosion, ParticleEffect
-
+from impact_animations import *
 
 # Setup
 clock = pygame.time.Clock()
 pygame.init()
-pygame.display.set_caption("Constellations")
+pygame.display.set_caption("The Astronomer")
 WINDOW_SIZE = (1000, 600)
 screen = pygame.display.set_mode(WINDOW_SIZE)
 CANVAS_SIZE = (500, 300)
@@ -26,12 +25,14 @@ sprite1 = pygame.image.load("sprites/sprite1.png")
 sprite2 = pygame.image.load("sprites/sprite2.png")
 spritebox = pygame.Rect(300,175, 12,16)
 mainframe = sprite1
-checkpoint = [300, 175]
+checkpoint = [300, 256]
 
 # Delta Time
 prev_time = time.time()
 dt = 0
 TARGET_FPS = 80
+
+tickcounter = 0
 
 # Create Map from map.txt
 def load_map():
@@ -57,6 +58,7 @@ stars = make_stars(500, 0, 500, 300, 1200)
 moving_left = False
 moving_right = False
 vertical_momentum = 0
+collision_types = {"top": False, "bottom": False, "left": False, "right": False, "death": False}
 airtimer = 0
 jumpcounter = 0
 explosion_tests = []
@@ -73,7 +75,7 @@ def test_collisions(rect, tiles):
 
 
 def move(rect, movement, tiles, vertical_momentum):
-    collision_types = {"top": False, "bottom": False, "left": False, "right": False}
+    collision_types = {"top": False, "bottom": False, "left": False, "right": False, "death": False}
     rect.x += movement[0]
     hit_list = test_collisions(rect, tiles)
     for tile in hit_list:
@@ -94,6 +96,7 @@ def move(rect, movement, tiles, vertical_momentum):
             collision_types["top"] = True
             vertical_momentum = 0
         if tile.height == 15:
+            collision_types["death"] = True
             rect.x = checkpoint[0]
             rect.y = checkpoint[1]
             break
@@ -130,14 +133,29 @@ while gameRunning: ############################### GAME LOOP ###################
     dt = now - prev_time
     prev_time = now
 
+    if tickcounter == 0:
+        tickcounter += 1
+    else:
+        tickcounter -= 1
+
 # Change Scroll
     scroll[0] += int((spritebox.x-scroll[0])-(CANVAS_SIZE[0]/2))/20*(math.ceil(dt*TARGET_FPS))
     scroll[1] += int((spritebox.y-scroll[1])-(CANVAS_SIZE[1]/2))/20*(math.ceil(dt*TARGET_FPS))
 
+    isonscreen = False
+    if spritebox.x - scroll[0] > 0 and spritebox.x - scroll[0] < 500:
+        isonscreen = True
+
+    if collision_types["death"] == True: #If just died, stop player movement
+        moving_right = False
+        moving_left = False
+        vertical_momentum = 0
+        player_movement = [0,0]
+
 # Pygame Events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            print(checkpoint) #()()()()()()
+            print(checkpoint)
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
@@ -224,18 +242,21 @@ while gameRunning: ############################### GAME LOOP ###################
         if len(explosion_tests) < 1:
             explosion_tests.append(Explosion(spritebox.x+12, spritebox.y+8))
 
-    if collision_types["bottom"] == True:
+    if collision_types["death"] == True:
         if len(particle_tests) < 1:
-            particle_tests.append(ParticleEffect(spritebox.x+6, spritebox.y+8))
-
-    for pars in particle_tests:
-        pars.draw(display, scroll)
-        if len(pars.particles) < 1:
-            particle_tests.remove(pars)
-
+            particle_tests.append(Disappeario(spritebox.x+6, spritebox.y+8))
+        
+    if isonscreen:
+        for pars in particle_tests:
+            pars.draw(display, scroll)
+            pars.shrink()
+            pars.move()
+            if len(pars.particles) < 1:
+                particle_tests.remove(pars)
     for exp in explosion_tests:
-        exp.grow()
-        if exp.radius > 20:
+        if tickcounter == 1:
+            exp.grow()
+        if exp.radius > 12:
             explosion_tests.remove(exp)
         else:
             exp.draw(display, scroll)
