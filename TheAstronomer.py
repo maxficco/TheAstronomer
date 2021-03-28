@@ -1,6 +1,6 @@
 import pygame, sys, time, math, random
 from impact_animations import *
-
+ifeellikeit = True
 # Setup
 clock = pygame.time.Clock()
 pygame.init()
@@ -61,8 +61,10 @@ vertical_momentum = 0
 collision_types = {"top": False, "bottom": False, "left": False, "right": False, "death": False}
 airtimer = 0
 jumpcounter = 0
-explosion_tests = []
-particle_tests = []
+doublejump = True
+explosion_list = []
+particle_list = []
+torches = []
 
 scroll = [0,0]
 
@@ -100,7 +102,7 @@ def move(rect, movement, tiles, vertical_momentum):
             rect.x = checkpoint[0]
             rect.y = checkpoint[1]
             break
-    return rect, collision_types, vertical_momentum
+    return rect, collision_types, vertical_momentum 
 
 
 while titlescreen:
@@ -115,12 +117,12 @@ while titlescreen:
 
         screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
         pygame.display.update()
-        clock.tick(110)
+        clock.tick(200)
 
 while gameRunning: ############################### GAME LOOP ###############################
 
 # Reset display surface to sky color
-    multiplier = spritebox.y/3000
+    multiplier = spritebox.y/1500
     if multiplier <= 0:
         multiplier = 0
     if multiplier >= 1:
@@ -166,9 +168,11 @@ while gameRunning: ############################### GAME LOOP ###################
                 moving_right = True
                 mainframe = sprite2
             if event.key == pygame.K_UP:
-                if airtimer < 25 and jumpcounter < 1:
+                if (airtimer < 25 and jumpcounter < 1)  or (doublejump == True and jumpcounter == 1 and airtimer > 25):
                     jumpcounter += 1
                     vertical_momentum = -3
+                    if jumpcounter == 2:
+                        particle_list.append(DoubleJump(spritebox.x+6, spritebox.y+12))
             if event.key == pygame.K_m:
                 checkpoint[0] = spritebox.x
                 checkpoint[1] = spritebox.y
@@ -184,9 +188,9 @@ while gameRunning: ############################### GAME LOOP ###################
             pygame.draw.rect(display, (255,255,255), (s[0]-scroll[0]/100, s[1]-scroll[1]/4, 1, 1))
 
 # Draw Background Objects
-    pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/50,125+scroll[1]/40), 50)
-    pygame.draw.rect(display, (110, 115, 125), (0,150-scroll[1]/40,500,300))
-    pygame.draw.rect(display, (43, 49, 61), (0,220-scroll[1]/17.5,500,500))
+    pygame.draw.circle(display, (251, 90, 82), (190-scroll[0]/50,150+scroll[1]/40), 50)
+    pygame.draw.rect(display, (110*multiplier, 115*multiplier, 125*multiplier), (0,150-scroll[1]/40,500,300))
+    pygame.draw.rect(display, (43*multiplier, 49*multiplier, 61*multiplier), (0,220-scroll[1]/17.5,500,500))
 
 # Draw Tiles and Map Rects
     tile_rects = []
@@ -223,7 +227,7 @@ while gameRunning: ############################### GAME LOOP ###################
     vertical_momentum += 0.125*(dt*TARGET_FPS)
     if vertical_momentum > 3:
         vertical_momentum = 3
-    #print(player_movement)
+
     spritebox, collision_types, vertical_momentum = move(spritebox, player_movement, tile_rects, vertical_momentum)
     
     if collision_types["bottom"] == True:
@@ -235,36 +239,54 @@ while gameRunning: ############################### GAME LOOP ###################
 
     display.blit(mainframe, (spritebox.x-scroll[0], spritebox.y-scroll[1]))
 
+
+# Torches / Lighting
+
+    if len(torches) < 1:
+        torches.append(Torch(spritebox.x, spritebox.y, random.randint(0,5)))
+
+    for torch in torches:
+        torch.shrink()
+        torch.move()
+        if mainframe == sprite1:
+            torch.draw(display, scroll, spritebox, True, True)
+        else:
+            torch.draw(display, scroll, spritebox, False, True)
+
+        if len(torch.particles) < 1:
+                torches.remove(torch)
+
+# Animations
     if collision_types["left"] == True:
-        if len(explosion_tests) < 1:
-            explosion_tests.append(Explosion(spritebox.x, spritebox.y+8))
+        if len(explosion_list) < 1:
+            explosion_list.append(Explosion(spritebox.x, spritebox.y+8))
     if collision_types["right"] == True:
-        if len(explosion_tests) < 1:
-            explosion_tests.append(Explosion(spritebox.x+12, spritebox.y+8))
+        if len(explosion_list) < 1:
+            explosion_list.append(Explosion(spritebox.x+12, spritebox.y+8))
 
     if collision_types["death"] == True:
-        if len(particle_tests) < 1:
-            particle_tests.append(Disappeario(spritebox.x+6, spritebox.y+8))
+        if len(particle_list) < 1:
+            particle_list.append(Disappeario(spritebox.x+6, spritebox.y+8))
         
     if isonscreen:
-        for pars in particle_tests:
+        for pars in particle_list:
             pars.draw(display, scroll)
             pars.shrink()
             pars.move()
             if len(pars.particles) < 1:
-                particle_tests.remove(pars)
-    for exp in explosion_tests:
+                particle_list.remove(pars)
+    for exp in explosion_list:
         if tickcounter == 1:
             exp.grow()
         if exp.radius > 12:
-            explosion_tests.remove(exp)
+            explosion_list.remove(exp)
         else:
             exp.draw(display, scroll)
-
 
 # Draw display (scaled) and update screen
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0,0))
     pygame.display.update()
+
 
 # Time Delay
     clock.tick(110)
@@ -276,7 +298,7 @@ while gameRunning: ############################### GAME LOOP ###################
         endgame = True
 
 while endgame:
-    display.fill((43, 49, 61))
+    display.fill((0, 0, 0))
     for title_event in pygame.event.get():
         if title_event.type == pygame.QUIT:
             pygame.quit()
