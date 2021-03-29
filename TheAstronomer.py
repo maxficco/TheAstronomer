@@ -1,5 +1,5 @@
 import pygame, sys, time, math, random
-from impact_animations import *
+from animation_classes import *
 ifeellikeit = True
 # Setup
 clock = pygame.time.Clock()
