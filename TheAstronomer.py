@@ -1,6 +1,6 @@
 import pygame, sys, time, math, random
 from animation_classes import *
-ifeellikeit = True
+
 # Setup
 clock = pygame.time.Clock()
 pygame.init()
@@ -33,6 +33,17 @@ dt = 0
 TARGET_FPS = 80
 
 tickcounter = 0
+
+# Music
+soundtrack = ["music/A healthy signal.mp3", "music/Cotton.mp3", "music/Fungi.mp3", "music/Nuts and Seeds.mp3", "music/Zehn.mp3"]
+pygame.mixer.init()
+while len(soundtrack) > 0:
+    qup = random.choice(soundtrack)
+    pygame.mixer.music.load(qup)
+    soundtrack.remove(qup)
+    print(soundtrack)
+
+pygame.mixer.music.play(-1)
 
 # Create Map from map.txt
 def load_map():
